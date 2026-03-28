@@ -2,133 +2,187 @@
 
 import { useState } from 'react'
 import { saveAuditUrl } from '@/lib/supabase'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+
+const improvements = [
+  { priority: 'critical', label: 'Core Web Vitals', desc: 'LCP > 4s — bloque l\'indexation IA', color: 'destructive' },
+  { priority: 'high',     label: 'Schema.org',      desc: 'Article, FAQ, BreadcrumbList manquants', color: 'warning' },
+  { priority: 'medium',   label: 'Contenu long-form', desc: 'Moins de 300 mots par page', color: 'secondary' },
+  { priority: 'low',      label: 'Robots.txt GPTBot', desc: 'Autoriser l\'indexation IA', color: 'outline' },
+]
+
+const criteria = [
+  { label: 'Structure sémantique', score: 92, color: 'bg-emerald-500' },
+  { label: 'Contenu structuré',    score: 78, color: 'bg-emerald-500' },
+  { label: 'Balisage Schema.org',  score: 45, color: 'bg-amber-500'   },
+  { label: 'Vitesse chargement',   score: 31, color: 'bg-red-500'     },
+  { label: 'Méta-données IA',      score: 61, color: 'bg-amber-500'   },
+]
 
 export default function HomePage() {
-  const [url, setUrl] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [url, setUrl]           = useState('')
+  const [loading, setLoading]   = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [error, setError] = useState('')
-
-  const isValidUrl = (value: string) => {
-    try {
-      new URL(value.startsWith('http') ? value : `https://${value}`)
-      return true
-    } catch {
-      return false
-    }
-  }
+  const [error, setError]       = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     const normalized = url.startsWith('http') ? url : `https://${url}`
-    if (!isValidUrl(normalized)) {
-      setError('Entrez une URL valide — ex: monsite.fr')
-      return
-    }
+    try { new URL(normalized) } catch { setError('URL invalide'); return }
     setLoading(true)
     try {
       await saveAuditUrl(normalized)
       setSubmitted(true)
-    } catch (err) {
-      console.error(err)
-      setError("Erreur lors de l'envoi. Réessayez.")
-    } finally {
-      setLoading(false)
-    }
+    } catch { setError("Erreur d'envoi. Réessayez.") }
+    finally  { setLoading(false) }
   }
 
   return (
-    <main className="min-h-screen bg-[#050A0E] text-white overflow-hidden relative font-sans">
-      <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: 'linear-gradient(rgba(0,200,150,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,200,150,0.04) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
-      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full bg-emerald-500/10 blur-[120px]" />
-      <div className="pointer-events-none absolute bottom-0 right-0 w-[500px] h-[400px] rounded-full bg-cyan-500/8 blur-[140px]" />
-      <nav className="relative z-10 flex items-center justify-between px-8 py-6 border-b border-white/5">
-        <div className="flex items-center gap-2.5">
-          <span className="w-7 h-7 rounded-md bg-emerald-500 flex items-center justify-center">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="#050A0E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </span>
-          <span className="text-sm font-semibold tracking-wide text-white/90">GEO Audit</span>
-        </div>
-        <div className="hidden sm:flex items-center gap-6 text-xs text-white/40 font-medium">
-          <a href="#how" className="hover:text-white/70 transition-colors">Comment ça marche</a>
-          <a href="#pricing" className="hover:text-white/70 transition-colors">Tarifs</a>
-          <button className="px-3.5 py-1.5 rounded-full border border-white/10 text-white/60 hover:border-emerald-500/50 hover:text-emerald-400 transition-all">Se connecter</button>
-        </div>
-      </nav>
-      <section className="relative z-10 flex flex-col items-center justify-center px-6 pt-28 pb-20 text-center">
-        <div className="mb-8 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-medium tracking-wide">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          Generative Engine Optimization
-        </div>
-        <h1 className="max-w-3xl text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
-          Votre site est-il{' '}
-          <span className="relative inline-block" style={{ background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            visible par l'IA&nbsp;?
-          </span>
-        </h1>
-        <p className="mt-6 max-w-xl text-base sm:text-lg text-white/45 leading-relaxed">
-          ChatGPT, Perplexity, Gemini… analysez comment les moteurs d'IA perçoivent votre site et obtenez un plan d'optimisation concret.
-        </p>
-        {!submitted ? (
-          <form onSubmit={handleSubmit} className="mt-12 w-full max-w-2xl">
-            <div className="relative flex items-center rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-1.5 shadow-[0_0_60px_rgba(16,185,129,0.08)] focus-within:border-emerald-500/40 focus-within:shadow-[0_0_80px_rgba(16,185,129,0.15)] transition-all duration-300">
-              <div className="pl-4 pr-3 text-white/25">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <main className="min-h-screen bg-[#09090b] p-4 md:p-6">
+
+      {/* Grid Bento */}
+      <div className="max-w-5xl mx-auto grid grid-cols-12 gap-3">
+
+        {/* ── Hero / Search ── span 12 */}
+        <Card className="col-span-12 bg-zinc-900 border-zinc-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 bg-emerald-500 rounded-lg flex items-center justify-center">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M2 7h10M7 2l5 5-5 5" stroke="#09090b" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <span className="text-sm font-semibold text-zinc-100">GEO Audit</span>
               </div>
-              <input type="text" value={url} onChange={(e) => { setUrl(e.target.value); setError('') }} placeholder="https://votre-site.fr" className="flex-1 bg-transparent text-sm text-white placeholder:text-white/25 outline-none py-3 pr-2" autoComplete="off" spellCheck={false} />
-              <button type="submit" disabled={loading || !url.trim()} className="shrink-0 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-semibold text-[#050A0E] transition-all duration-200 active:scale-95">
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round"/></svg>
-                    Analyse…
-                  </span>
-                ) : 'Analyser →'}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/>
+                <span className="text-xs text-zinc-500">Système actif</span>
+              </div>
             </div>
-            {error && <p className="mt-3 text-xs text-red-400/80 text-left pl-2">{error}</p>}
-            <p className="mt-4 text-xs text-white/20 text-center">Gratuit · Résultats en moins de 60 secondes · Sans inscription</p>
-          </form>
-        ) : (
-          <div className="mt-12 w-full max-w-2xl rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-8 text-center">
-            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-500/15 flex items-center justify-center">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+
+            {!submitted ? (
+              <form onSubmit={handleSubmit} className="flex gap-2">
+                <div className="flex-1 flex items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-xl px-4 focus-within:border-emerald-500 transition-colors">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="1.5" strokeLinecap="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"/>
+                  </svg>
+                  <Input
+                    value={url}
+                    onChange={e => { setUrl(e.target.value); setError('') }}
+                    placeholder="https://votre-site.fr — Analysez l'IA-compatibilité"
+                    className="border-0 bg-transparent text-sm text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-0 p-0 h-11"
+                  />
+                </div>
+                <Button disabled={loading || !url.trim()} className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold shrink-0">
+                  {loading ? 'Analyse…' : 'Analyser →'}
+                </Button>
+              </form>
+            ) : (
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-6 py-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-zinc-200">Audit lancé pour <span className="text-emerald-400">{url}</span></p>
+                  <p className="text-xs text-zinc-500 mt-0.5">Résultats disponibles sous peu</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => { setSubmitted(false); setUrl('') }} className="text-zinc-500 hover:text-zinc-300 text-xs">
+                  Nouveau
+                </Button>
+              </div>
+            )}
+            {error && <p className="text-xs text-red-400 mt-2 pl-1">{error}</p>}
+          </CardContent>
+        </Card>
+
+        {/* ── Score SEO ── span 3 */}
+        <Card className="col-span-12 md:col-span-3 bg-zinc-900 border-zinc-800">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium tracking-widest text-zinc-500 uppercase">Score SEO</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-3">
+            <div className="relative w-24 h-24">
+              <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#27272a" strokeWidth="7"/>
+                <circle cx="50" cy="50" r="38" fill="none" stroke="url(#sg)" strokeWidth="7"
+                  strokeLinecap="round" strokeDasharray="238.76" strokeDashoffset="52"/>
+                <defs>
+                  <linearGradient id="sg" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#10b981"/>
+                    <stop offset="100%" stopColor="#06b6d4"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="font-mono text-2xl font-medium text-zinc-100">78</span>
+                <span className="text-[10px] text-zinc-500">/100</span>
+              </div>
             </div>
-            <p className="text-base font-semibold text-white/90">Audit en cours pour</p>
-            <p className="mt-1 text-sm text-emerald-400 break-all">{url.startsWith('http') ? url : `https://${url}`}</p>
-            <p className="mt-3 text-xs text-white/35">Vous recevrez votre rapport sous peu. Merci !</p>
-            <button onClick={() => { setSubmitted(false); setUrl('') }} className="mt-5 text-xs text-white/30 hover:text-white/60 underline underline-offset-2 transition-colors">Analyser un autre site</button>
-          </div>
-        )}
-      </section>
-      <section className="relative z-10 flex flex-wrap justify-center gap-x-16 gap-y-6 px-8 pb-24">
-        {[{ n: '2 400+', label: 'sites analysés' }, { n: '94%', label: 'score moyen amélioré' }, { n: '< 60s', label: "temps d'analyse" }].map(({ n, label }) => (
-          <div key={label} className="text-center">
-            <p className="text-3xl font-black text-white/90 tabular-nums">{n}</p>
-            <p className="mt-1 text-xs text-white/30 font-medium">{label}</p>
-          </div>
-        ))}
-      </section>
-      <section id="how" className="relative z-10 max-w-4xl mx-auto px-8 pb-32">
-        <h2 className="text-center text-xs font-semibold tracking-[0.2em] uppercase text-white/30 mb-12">Comment ça marche</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {[{ step: '01', title: 'Soumettez votre URL', desc: "Entrez l'adresse de votre site. Pas besoin de compte." }, { step: '02', title: 'Analyse multi-moteurs', desc: 'Nous simulons l\'exploration par ChatGPT, Perplexity et Gemini.' }, { step: '03', title: 'Rapport & actions', desc: 'Recevez un score GEO et des recommandations priorisées.' }].map(({ step, title, desc }) => (
-            <div key={step} className="rounded-xl border border-white/6 bg-white/3 p-6 hover:border-emerald-500/20 hover:bg-white/5 transition-all duration-300 group">
-              <span className="text-[11px] font-bold tracking-widest text-emerald-500/60 group-hover:text-emerald-400 transition-colors">{step}</span>
-              <h3 className="mt-3 text-sm font-semibold text-white/85">{title}</h3>
-              <p className="mt-2 text-xs text-white/35 leading-relaxed">{desc}</p>
-            </div>
+            <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/10">Bon</Badge>
+          </CardContent>
+        </Card>
+
+        {/* ── Critères GEO ── span 5 */}
+        <Card className="col-span-12 md:col-span-5 bg-zinc-900 border-zinc-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs font-medium tracking-widest text-zinc-500 uppercase">Analyse IA-compatibilité</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {criteria.map(c => (
+              <div key={c.label}>
+                <div className="flex justify-between mb-1">
+                  <span className="text-xs text-zinc-400">{c.label}</span>
+                  <span className="font-mono text-xs text-zinc-300">{c.score}%</span>
+                </div>
+                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${c.color} transition-all duration-700`} style={{ width: `${c.score}%` }}/>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* ── Améliorations ── span 4 */}
+        <Card className="col-span-12 md:col-span-4 bg-zinc-900 border-zinc-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xs font-medium tracking-widest text-zinc-500 uppercase">Points d'amélioration</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-0 divide-y divide-zinc-800">
+            {improvements.map(imp => (
+              <div key={imp.label} className="flex items-center gap-3 py-2.5">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-zinc-200">{imp.label}</p>
+                  <p className="text-[11px] text-zinc-500 truncate">{imp.desc}</p>
+                </div>
+                <Badge variant={imp.color as 'destructive'|'secondary'|'outline'} className="shrink-0 text-[10px]">
+                  {imp.priority}
+                </Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* ── Stats ── span 12 */}
+        <div className="col-span-12 grid grid-cols-3 gap-3">
+          {[
+            { label: 'Audits total', value: '2 847', delta: '↑ +12%', col: 'text-emerald-400' },
+            { label: 'Score moyen',  value: '72/100', delta: '→ Stable', col: 'text-zinc-400'   },
+            { label: 'Temps moyen', value: '< 60s', delta: '↓ -3s',  col: 'text-emerald-400' },
+          ].map(s => (
+            <Card key={s.label} className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-4">
+                <p className="text-xs text-zinc-500 mb-1 uppercase tracking-widest">{s.label}</p>
+                <p className="font-mono text-xl font-medium text-zinc-100">{s.value}</p>
+                <p className={`text-xs mt-1 ${s.col}`}>{s.delta} ce mois</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
-      </section>
-      <footer className="relative z-10 border-t border-white/5 px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <p className="text-xs text-white/20">© 2025 GEO Audit. Tous droits réservés.</p>
-        <div className="flex gap-5 text-xs text-white/20">
-          <a href="#" className="hover:text-white/50 transition-colors">Confidentialité</a>
-          <a href="#" className="hover:text-white/50 transition-colors">CGU</a>
-          <a href="#" className="hover:text-white/50 transition-colors">Contact</a>
-        </div>
-      </footer>
+
+      </div>
     </main>
   )
 }
